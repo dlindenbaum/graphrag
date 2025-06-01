@@ -35,6 +35,10 @@ class LanguageModelConfig(BaseModel):
         description="The Google Cloud location for Gemini services.",
         default=None,
     )
+    multimodal_prompts: dict[str, str] | None = Field(
+        description="A dictionary of default prompts for multimodal tasks, e.g., {'image_description': 'Describe this image.', 'video_summary': 'Summarize this video.'}",
+        default=None,
+    )
 
     def _validate_api_key(self) -> None:
         """Validate the API key.
@@ -51,7 +55,11 @@ class LanguageModelConfig(BaseModel):
         ApiKeyMissingError
             If the API key is missing and is required.
         """
-        is_gemini = self.type in [ModelType.GeminiChat, ModelType.GeminiEmbedding]
+        is_gemini = self.type in [
+            ModelType.GeminiChat,
+            ModelType.GeminiEmbedding,
+            ModelType.GeminiMultimodal,
+        ]
 
         if (self.auth_type == AuthType.APIKey or is_gemini) and (
             self.api_key is None or self.api_key.strip() == ""
@@ -83,10 +91,15 @@ class LanguageModelConfig(BaseModel):
         ConflictingSettingsError
             If the Azure authentication type conflicts with the model being used.
         """
-        is_gemini = self.type in [ModelType.GeminiChat, ModelType.GeminiEmbedding]
+        is_gemini = self.type in [
+            ModelType.GeminiChat,
+            ModelType.GeminiEmbedding,
+            ModelType.GeminiMultimodal,
+        ]
         if self.auth_type == AuthType.AzureManagedIdentity and (
             self.type == ModelType.OpenAIChat
             or self.type == ModelType.OpenAIEmbedding
+            or self.type == ModelType.OpenAIMultimodal
             or is_gemini
         ):
             msg = f"auth_type of azure_managed_identity is not supported for model type {self.type}. Please rerun `graphrag init` and set the auth_type to api_key (if OpenAI or Gemini) or ensure you are using a compatible model type for Azure Managed Identity."
@@ -102,9 +115,15 @@ class LanguageModelConfig(BaseModel):
         KeyError
             If the model name is not recognized.
         """
-        # Type should be contained by the registered models
-        if not ModelFactory.is_supported_model(self.type):
-            msg = f"Model type {self.type} is not recognized, must be one of {ModelFactory.get_chat_models() + ModelFactory.get_embedding_models()}."
+        # TODO: Update ModelFactory to officially include multimodal types
+        known_multimodal_types = [
+            ModelType.OpenAIMultimodal,
+            ModelType.AzureOpenAIMultimodal,
+            ModelType.GeminiMultimodal,
+        ]
+        if not ModelFactory.is_supported_model(self.type) and self.type not in known_multimodal_types:
+            all_known_types = ModelFactory.get_chat_models() + ModelFactory.get_embedding_models() + known_multimodal_types
+            msg = f"Model type {self.type} is not recognized, must be one of {all_known_types}."
             raise KeyError(msg)
 
     model: str = Field(description="The LLM model to use.")
@@ -324,7 +343,12 @@ class LanguageModelConfig(BaseModel):
         AzureDeploymentNameMissingError
             If the deployment name is missing and is required.
         """
-        if self.type == ModelType.AzureOpenAIChat or self.type == ModelType.AzureOpenAIEmbedding:
+        is_azure_model = self.type in [
+            ModelType.AzureOpenAIChat,
+            ModelType.AzureOpenAIEmbedding,
+            ModelType.AzureOpenAIMultimodal,
+        ]
+        if is_azure_model:
             self._validate_api_base()
             self._validate_api_version()
             self._validate_deployment_name()
@@ -337,7 +361,12 @@ class LanguageModelConfig(BaseModel):
         ConflictingSettingsError
             If conflicting settings are provided for Gemini models.
         """
-        if self.type in [ModelType.GeminiChat, ModelType.GeminiEmbedding]:
+        is_gemini_model = self.type in [
+            ModelType.GeminiChat,
+            ModelType.GeminiEmbedding,
+            ModelType.GeminiMultimodal,
+        ]
+        if is_gemini_model:
             conflicting_azure_fields = [
                 self.api_base,
                 self.api_version,

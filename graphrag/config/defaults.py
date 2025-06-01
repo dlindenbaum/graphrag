@@ -283,6 +283,12 @@ class LanguageModelDefaults:
     concurrent_requests: int = 25
     responses: None = None
     async_mode: AsyncType = AsyncType.Threaded
+    multimodal_prompts: dict[str, str] | None = field(
+        default_factory=lambda: {
+            "image_description": "Describe this image in detail. Focus on key objects, people, settings, and any text present.",
+            "video_summary": "Summarize the key events, speech, and visual elements in this video. Provide a concise overview.",
+        }
+    )
 
 
 @dataclass
