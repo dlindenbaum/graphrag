@@ -8,6 +8,11 @@ GraphRAG was built and tested using OpenAI models, so this is the default model 
 
 GraphRAG also utilizes a language model wrapper library used by several projects within our team, called fnllm. fnllm provides two important functions for GraphRAG: rate limiting configuration to help us maximize throughput for large indexing jobs, and robust caching of API calls to minimize consumption on repeated indexes for testing, experimentation, or incremental ingest. fnllm uses the OpenAI Python SDK under the covers, so OpenAI-compliant endpoints are a base requirement out-of-the-box.
 
+GraphRAG offers native support for several language model providers:
+
+*   **OpenAI & Azure OpenAI**: Configurable as described in the examples throughout this documentation.
+*   **Google Gemini**: For detailed setup and examples, see the [Google Gemini Usage Guide](./gemini_usage.md).
+
 ## Model Selection Considerations
 
 GraphRAG has been most thoroughly tested with the gpt-4 series of models from OpenAI, including gpt-4 gpt-4-turbo, gpt-4o, and gpt-4o-mini. Our [arXiv paper](https://arxiv.org/abs/2404.16130), for example, performed quality evaluation using gpt-4-turbo.

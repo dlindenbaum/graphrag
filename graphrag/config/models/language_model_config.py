@@ -27,6 +27,14 @@ class LanguageModelConfig(BaseModel):
         description="The API key to use for the LLM service.",
         default=language_model_defaults.api_key,
     )
+    gemini_project_id: str | None = Field(
+        description="The Google Cloud Project ID for Gemini.",
+        default=None,
+    )
+    gemini_location: str | None = Field(
+        description="The Google Cloud location for Gemini services.",
+        default=None,
+    )
 
     def _validate_api_key(self) -> None:
         """Validate the API key.
@@ -43,17 +51,19 @@ class LanguageModelConfig(BaseModel):
         ApiKeyMissingError
             If the API key is missing and is required.
         """
-        if self.auth_type == AuthType.APIKey and (
+        is_gemini = self.type in [ModelType.GeminiChat, ModelType.GeminiEmbedding]
+
+        if (self.auth_type == AuthType.APIKey or is_gemini) and (
             self.api_key is None or self.api_key.strip() == ""
         ):
             raise ApiKeyMissingError(
                 self.type,
-                self.auth_type.value,
+                self.auth_type.value if not is_gemini else "api_key",  # Gemini always uses API key
             )
 
-        if (self.auth_type == AuthType.AzureManagedIdentity) and (
+        if self.auth_type == AuthType.AzureManagedIdentity and (
             self.api_key is not None and self.api_key.strip() != ""
-        ):
+        ) and not is_gemini: # Don't raise if it's Gemini, other validator will catch it
             msg = "API Key should not be provided when using Azure Managed Identity. Please rerun `graphrag init` and remove the api_key when using Azure Managed Identity."
             raise ConflictingSettingsError(msg)
 
@@ -73,10 +83,13 @@ class LanguageModelConfig(BaseModel):
         ConflictingSettingsError
             If the Azure authentication type conflicts with the model being used.
         """
+        is_gemini = self.type in [ModelType.GeminiChat, ModelType.GeminiEmbedding]
         if self.auth_type == AuthType.AzureManagedIdentity and (
-            self.type == ModelType.OpenAIChat or self.type == ModelType.OpenAIEmbedding
+            self.type == ModelType.OpenAIChat
+            or self.type == ModelType.OpenAIEmbedding
+            or is_gemini
         ):
-            msg = f"auth_type of azure_managed_identity is not supported for model type {self.type}. Please rerun `graphrag init` and set the auth_type to api_key."
+            msg = f"auth_type of azure_managed_identity is not supported for model type {self.type}. Please rerun `graphrag init` and set the auth_type to api_key (if OpenAI or Gemini) or ensure you are using a compatible model type for Azure Managed Identity."
             raise ConflictingSettingsError(msg)
 
     type: ModelType | str = Field(description="The type of LLM model to use.")
@@ -311,9 +324,38 @@ class LanguageModelConfig(BaseModel):
         AzureDeploymentNameMissingError
             If the deployment name is missing and is required.
         """
-        self._validate_api_base()
-        self._validate_api_version()
-        self._validate_deployment_name()
+        if self.type == ModelType.AzureOpenAIChat or self.type == ModelType.AzureOpenAIEmbedding:
+            self._validate_api_base()
+            self._validate_api_version()
+            self._validate_deployment_name()
+
+    def _validate_gemini_settings(self) -> None:
+        """Validate the Gemini settings.
+
+        Raises
+        ------
+        ConflictingSettingsError
+            If conflicting settings are provided for Gemini models.
+        """
+        if self.type in [ModelType.GeminiChat, ModelType.GeminiEmbedding]:
+            conflicting_azure_fields = [
+                self.api_base,
+                self.api_version,
+                self.deployment_name,
+            ]
+            if any(field is not None for field in conflicting_azure_fields):
+                msg = "Azure-specific fields (api_base, api_version, deployment_name) should not be set for Gemini models."
+                raise ConflictingSettingsError(msg)
+
+            # Add checks for OpenAI-specific fields if any become relevant, e.g., self.organization
+            # For now, let's assume 'organization' could be a conflicting field if set for Gemini.
+            if self.organization is not None:
+                msg = "OpenAI-specific field (organization) should not be set for Gemini models."
+                raise ConflictingSettingsError(msg)
+
+            # Gemini project_id and location are not strictly required by the library itself for all operations,
+            # but could be validated here if they become mandatory for all Gemini use cases.
+            # For now, we assume they are optional at this config level.
 
     @model_validator(mode="after")
     def _validate_model(self):
@@ -324,5 +366,6 @@ class LanguageModelConfig(BaseModel):
         self._validate_requests_per_minute()
         self._validate_max_retries()
         self._validate_azure_settings()
+        self._validate_gemini_settings()
         self._validate_encoding_model()
         return self

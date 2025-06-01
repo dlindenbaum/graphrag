@@ -26,6 +26,16 @@ The GraphRAG project is a data pipeline and transformation suite that is designe
 
 To learn more about GraphRAG and how it can be used to enhance your LLM's ability to reason about your private data, please visit the <a href="https://www.microsoft.com/en-us/research/blog/graphrag-unlocking-llm-discovery-on-narrative-private-data/" target="_blank">Microsoft Research Blog Post.</a>
 
+## Supported Language Models
+
+GraphRAG is designed to be flexible with language model support. It has been most extensively tested with OpenAI models. Recent versions of GraphRAG also include native support for:
+
+*   **OpenAI**: GPT-3.5, GPT-4 series.
+*   **Azure OpenAI**: Equivalents of the supported OpenAI models.
+*   **Google Gemini**: Gemini series models (e.g., Gemini Pro) for both chat and embedding functionalities.
+
+For detailed instructions on configuring these models, including YAML examples for OpenAI, Azure OpenAI, and Google Gemini, please refer to our [Language Model Configuration documentation](https://microsoft.github.io/graphrag/config/models/) (this link should point to the `docs/config/models.md` content on the official documentation site).
+
 ## Quickstart
 
 To get started with the GraphRAG system we recommend trying the [Solution Accelerator](https://github.com/Azure-Samples/graphrag-accelerator) package. This provides a user-friendly end-to-end experience with Azure resources.
