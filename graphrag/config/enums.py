@@ -36,6 +36,10 @@ class InputFileType(str, Enum):
     """The text input type."""
     json = "json"
     """The JSON input type."""
+    image = "image"
+    """The Image input type, typically a manifest file pointing to image URIs."""
+    video = "video"
+    """The Video input type, typically a manifest file pointing to video URIs."""
 
     def __repr__(self):
         """Get a string representation."""
@@ -93,10 +97,20 @@ class ModelType(str, Enum):
     # Embeddings
     OpenAIEmbedding = "openai_embedding"
     AzureOpenAIEmbedding = "azure_openai_embedding"
+    GeminiEmbedding = "gemini_embedding"
 
     # Chat Completion
     OpenAIChat = "openai_chat"
     AzureOpenAIChat = "azure_openai_chat"
+    GeminiChat = "gemini_chat"
+
+    # Multimodal
+    OpenAIMultimodal = "openai_multimodal"
+    """OpenAI multimodal model (e.g., GPT-4o)."""
+    AzureOpenAIMultimodal = "azure_openai_multimodal"
+    """Azure OpenAI multimodal model."""
+    GeminiMultimodal = "gemini_multimodal"
+    """Gemini multimodal model (e.g., Gemini 1.5 Pro)."""
 
     # Debug
     MockChat = "mock_chat"

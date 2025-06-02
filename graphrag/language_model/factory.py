@@ -14,6 +14,10 @@ from graphrag.language_model.providers.fnllm.models import (
     OpenAIChatFNLLM,
     OpenAIEmbeddingFNLLM,
 )
+from graphrag.language_model.providers.gemini.models import (
+    GeminiChat,
+    GeminiEmbedding,
+)
 
 
 class ModelFactory:
@@ -105,10 +109,16 @@ ModelFactory.register_chat(
 ModelFactory.register_chat(
     ModelType.OpenAIChat, lambda **kwargs: OpenAIChatFNLLM(**kwargs)
 )
+ModelFactory.register_chat(
+    ModelType.GeminiChat, lambda **kwargs: GeminiChat(**kwargs)
+)
 
 ModelFactory.register_embedding(
     ModelType.AzureOpenAIEmbedding, lambda **kwargs: AzureOpenAIEmbeddingFNLLM(**kwargs)
 )
 ModelFactory.register_embedding(
     ModelType.OpenAIEmbedding, lambda **kwargs: OpenAIEmbeddingFNLLM(**kwargs)
+)
+ModelFactory.register_embedding(
+    ModelType.GeminiEmbedding, lambda **kwargs: GeminiEmbedding(**kwargs)
 )

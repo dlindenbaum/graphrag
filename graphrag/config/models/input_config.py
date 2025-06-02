@@ -61,3 +61,11 @@ class InputConfig(BaseModel):
         description="The document attribute columns to use.",
         default=graphrag_config_defaults.input.metadata,
     )
+    media_url_column: str | None = Field(
+        description="The column in a media manifest file that contains the URI for the media (e.g., S3 URL). Required when file_type is 'image' or 'video'.",
+        default=None,
+    )
+    media_attributes_columns: list[str] | None = Field(
+        description="A list of columns in a media manifest file whose values should be stored as attributes for the media document.",
+        default=None,
+    )
