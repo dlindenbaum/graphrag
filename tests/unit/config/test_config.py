@@ -11,7 +11,9 @@ from pydantic import ValidationError
 import graphrag.config.defaults as defs
 from graphrag.config.create_graphrag_config import create_graphrag_config
 from graphrag.config.enums import AuthType, ModelType
+from graphrag.config.errors import ConflictingSettingsError
 from graphrag.config.load_config import load_config
+from graphrag.config.models import LanguageModelConfig
 from tests.unit.config.utils import (
     DEFAULT_EMBEDDING_MODEL_CONFIG,
     DEFAULT_MODEL_CONFIG,
@@ -181,3 +183,71 @@ def test_load_config_missing_env_vars() -> None:
     root_dir = (cwd / "fixtures" / "minimal_config_missing_env_var").resolve()
     with pytest.raises(KeyError):
         load_config(root_dir=root_dir)
+
+
+# region LanguageModelConfig Bedrock Tests
+def test_language_model_config_bedrock_chat_success():
+    config_dict = {
+        "type": "bedrock_chat",
+        "model": "anthropic.claude-v2",
+        "aws_region": "us-east-1",
+        "aws_access_key_id": "test_key",
+        "aws_secret_access_key": "test_secret",
+    }
+    config = LanguageModelConfig(**config_dict)
+    assert config.type == ModelType.BedrockChat
+    assert config.model == "anthropic.claude-v2"
+    assert config.aws_region == "us-east-1"
+
+
+def test_language_model_config_bedrock_embedding_success():
+    config_dict = {
+        "type": "bedrock_embedding",
+        "model": "amazon.titan-embed-text-v1",
+        "aws_region": "us-west-2",
+        "aws_access_key_id": "test_key",
+        "aws_secret_access_key": "test_secret",
+        "aws_session_token": "test_token",
+    }
+    config = LanguageModelConfig(**config_dict)
+    assert config.type == ModelType.BedrockEmbedding
+    assert config.model == "amazon.titan-embed-text-v1"
+    assert config.aws_region == "us-west-2"
+    assert config.aws_session_token == "test_token"
+
+
+def test_language_model_config_bedrock_missing_region_fails():
+    config_dict = {
+        "type": "bedrock_chat",
+        "model": "anthropic.claude-v2",
+        "aws_access_key_id": "test_key",
+        "aws_secret_access_key": "test_secret",
+    }
+    with pytest.raises(ValidationError) as context:
+        LanguageModelConfig(**config_dict)
+    assert "AWS region is required for Bedrock models" in str(context.value)
+
+
+def test_language_model_config_bedrock_conflicting_azure_setting_fails():
+    config_dict = {
+        "type": "bedrock_chat",
+        "model": "anthropic.claude-v2",
+        "aws_region": "us-east-1",
+        "api_base": "https://azure.openai.com",  # Conflicting
+    }
+    with pytest.raises(ValidationError) as context:
+        LanguageModelConfig(**config_dict)
+    assert "Azure-specific fields (api_base, api_version, deployment_name) should not be set for Bedrock models." in str(context.value)
+
+
+def test_language_model_config_bedrock_conflicting_gemini_setting_fails():
+    config_dict = {
+        "type": "bedrock_embedding",
+        "model": "amazon.titan-embed-text-v1",
+        "aws_region": "us-east-1",
+        "gemini_project_id": "test-project",  # Conflicting
+    }
+    with pytest.raises(ValidationError) as context:
+        LanguageModelConfig(**config_dict)
+    assert "Gemini-specific fields (gemini_project_id, gemini_location) should not be set for Bedrock models." in str(context.value)
+# endregion

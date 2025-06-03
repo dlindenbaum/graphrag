@@ -18,6 +18,10 @@ from graphrag.language_model.providers.gemini.models import (
     GeminiChat,
     GeminiEmbedding,
 )
+from graphrag.language_model.providers.bedrock import (
+    BedrockChatLLM,
+    BedrockEmbeddingLLM,
+)
 
 
 class ModelFactory:
@@ -112,6 +116,9 @@ ModelFactory.register_chat(
 ModelFactory.register_chat(
     ModelType.GeminiChat, lambda **kwargs: GeminiChat(**kwargs)
 )
+ModelFactory.register_chat(
+    ModelType.BedrockChat, lambda **kwargs: BedrockChatLLM(**kwargs)
+)
 
 ModelFactory.register_embedding(
     ModelType.AzureOpenAIEmbedding, lambda **kwargs: AzureOpenAIEmbeddingFNLLM(**kwargs)
@@ -121,4 +128,7 @@ ModelFactory.register_embedding(
 )
 ModelFactory.register_embedding(
     ModelType.GeminiEmbedding, lambda **kwargs: GeminiEmbedding(**kwargs)
+)
+ModelFactory.register_embedding(
+    ModelType.BedrockEmbedding, lambda **kwargs: BedrockEmbeddingLLM(**kwargs)
 )
