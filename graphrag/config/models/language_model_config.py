@@ -35,6 +35,10 @@ class LanguageModelConfig(BaseModel):
         description="The Google Cloud location for Gemini services.",
         default=None,
     )
+    aws_region: str | None = Field(description="The AWS region for Bedrock services.", default=None)
+    aws_access_key_id: str | None = Field(description="AWS access key ID for Bedrock.", default=None)
+    aws_secret_access_key: str | None = Field(description="AWS secret access key for Bedrock.", default=None)
+    aws_session_token: str | None = Field(description="AWS session token for Bedrock (optional).", default=None)
     multimodal_prompts: dict[str, str] | None = Field(
         description="A dictionary of default prompts for multimodal tasks, e.g., {'image_description': 'Describe this image.', 'video_summary': 'Summarize this video.'}",
         default=None,
@@ -386,6 +390,49 @@ class LanguageModelConfig(BaseModel):
             # but could be validated here if they become mandatory for all Gemini use cases.
             # For now, we assume they are optional at this config level.
 
+    def _validate_bedrock_settings(self) -> None:
+        """Validate the Bedrock settings.
+
+        Raises
+        ------
+        ValueError
+            If AWS region is missing for Bedrock models.
+        ConflictingSettingsError
+            If conflicting settings are provided for Bedrock models.
+        """
+        is_bedrock_model = self.type in [
+            ModelType.BedrockChat,
+            ModelType.BedrockEmbedding,
+        ]
+        if is_bedrock_model:
+            if not self.aws_region:
+                msg = "AWS region is required for Bedrock models."
+                raise ValueError(msg)
+
+            # Check for conflicting Azure settings
+            conflicting_azure_fields = [
+                self.api_base,
+                self.api_version,
+                self.deployment_name,
+            ]
+            if any(field is not None for field in conflicting_azure_fields):
+                msg = "Azure-specific fields (api_base, api_version, deployment_name) should not be set for Bedrock models."
+                raise ConflictingSettingsError(msg)
+
+            # Check for conflicting Gemini settings
+            conflicting_gemini_fields = [
+                self.gemini_project_id,
+                self.gemini_location,
+            ]
+            if any(field is not None for field in conflicting_gemini_fields):
+                msg = "Gemini-specific fields (gemini_project_id, gemini_location) should not be set for Bedrock models."
+                raise ConflictingSettingsError(msg)
+
+            # Check for conflicting OpenAI settings (e.g., organization)
+            if self.organization is not None:
+                msg = "OpenAI-specific field (organization) should not be set for Bedrock models."
+                raise ConflictingSettingsError(msg)
+
     @model_validator(mode="after")
     def _validate_model(self):
         self._validate_type()
@@ -396,5 +443,6 @@ class LanguageModelConfig(BaseModel):
         self._validate_max_retries()
         self._validate_azure_settings()
         self._validate_gemini_settings()
+        self._validate_bedrock_settings()
         self._validate_encoding_model()
         return self

@@ -12,6 +12,7 @@ GraphRAG offers native support for several language model providers:
 
 *   **OpenAI & Azure OpenAI**: Configurable as described in the examples throughout this documentation.
 *   **Google Gemini**: For detailed setup and examples, see the [Google Gemini Usage Guide](./gemini_usage.md).
+*   **AWS Bedrock**: For detailed setup and examples, see the [AWS Bedrock Usage Guide](./bedrock_usage.md).
 
 ## Model Selection Considerations
 

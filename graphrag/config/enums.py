@@ -112,6 +112,9 @@ class ModelType(str, Enum):
     GeminiMultimodal = "gemini_multimodal"
     """Gemini multimodal model (e.g., Gemini 1.5 Pro)."""
 
+    BedrockChat = "bedrock_chat"
+    BedrockEmbedding = "bedrock_embedding"
+
     # Debug
     MockChat = "mock_chat"
     MockEmbedding = "mock_embedding"
